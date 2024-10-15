@@ -85,7 +85,7 @@ def main():
     low  = -10.0
     high =  10.0
     pitch = 2.0
-    outfile = "holoScopeData.root"
+    outfile = "hodoScopeData.root"
 
     # Define TTrees and TBranches
     root_file = ROOT.TFile(outfile, "RECREATE")
