@@ -1,6 +1,6 @@
-# HoloScope
+# HodoScope
 
-This area holds code to generate and reconstruct data from the HoloScope
+This area holds code to generate and reconstruct data from the HodoScope
 
 ## Setup
 
@@ -9,5 +9,5 @@ The only dependence for the code is CERN ROOT. Instruction on installing ROOT ca
 # Example
 
 ```
-python GenHoloScopeData.py
+python GenHodoScopeData.py
 ```
