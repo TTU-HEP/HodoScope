@@ -182,15 +182,15 @@ def main():
         amp2_.clear()
         
     # Draw histos
-    c1 = ROOT.TCanvas( "c", "c", 800, 700)
-    saveHisto(c1, histos, "xtruth")
-    saveHisto(c1, histos, "xreco")
-    saveHisto(c1, histos, "xdiff")
-    saveHisto(c1, histos, "binary_adc_x", "colz")
-    saveHisto(c1, histos, "tri_adc_x", "colz")
-    saveHisto(c1, histos, "binary_adcMax_x", "colz")
-    saveHisto(c1, histos, "tri1_adcMax_x", "colz")
-    saveHisto(c1, histos, "tri2_adcMax_x", "colz")
+    # c1 = ROOT.TCanvas( "c", "c", 800, 700)
+    # saveHisto(c1, histos, "xtruth")
+    # saveHisto(c1, histos, "xreco")
+    # saveHisto(c1, histos, "xdiff")
+    # saveHisto(c1, histos, "binary_adc_x", "colz")
+    # saveHisto(c1, histos, "tri_adc_x", "colz")
+    # saveHisto(c1, histos, "binary_adcMax_x", "colz")
+    # saveHisto(c1, histos, "tri1_adcMax_x", "colz")
+    # saveHisto(c1, histos, "tri2_adcMax_x", "colz")
 
     # Write everything out
     root_file.Write()
