@@ -69,7 +69,11 @@ def getADCForBinary(p, x):
     elif p/2.0 < x:
         d = 0
     return f*d
-    
+
+def getNoise(m, w):
+    n = random.gauss(m,w)
+    return n
+
 def fullGeo(pitch):
     info = {}
     info["pitch"] = pitch
@@ -86,6 +90,8 @@ def main():
     high =  10.0
     pitch = 2.0
     outfile = "hodoScopeData.root"
+    meanNoise = 2.0
+    widthNoise = 1.0
 
     # Define TTrees and TBranches
     root_file = ROOT.TFile(outfile, "RECREATE")
@@ -126,8 +132,8 @@ def main():
         for i in range(len(geo["xmidloc"])):
             if i == maxChannelIdx1:
                 localX1 = xtruth-geo["xmidloc"][i]
-                ampBinary[i] = getADCForBinary(pitch, localX1)
-                ampTri1[i] = getADCForTriangle(pitch, localX1)
+                ampBinary[i] = getADCForBinary(pitch, localX1) + getNoise(meanNoise, widthNoise)
+                ampTri1[i] = getADCForTriangle(pitch, localX1) + getNoise(meanNoise, widthNoise)
             else:
                 ampBinary[i] = 0.0
                 ampTri1[i] = 0.0
