@@ -1,0 +1,172 @@
+import random
+import math
+import numpy as np
+import ROOT
+ROOT.gROOT.SetBatch(True)
+
+def makeBranch(tree, name, t):
+    b = None
+    if t == "vector":
+        b = ROOT.vector('double')()
+        tree.Branch(name, b)
+    elif t == "D":
+        b = np.zeros(1, dtype=float)
+        tree.Branch(name, b, name+"/"+t)
+    else:
+        print("branch type error")
+    return b
+
+def saveHisto(c, hDic, name, drawOpt):
+    hDic[name].Draw(drawOpt)
+    c.SaveAs(name+".png")
+
+def rand(m=0,M=100):
+    a = random.uniform(m,M)
+    return a
+
+def find_nearest(array,value):
+    idx = np.searchsorted(array, value, side="left")
+    if idx > 0 and (idx == len(array) or math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
+        return array [idx-1], idx-1
+    else:
+        return array [idx], idx
+
+def getDistanceToSquareCenter(x, square_size):
+    return abs(x- square_size / 2.0)
+
+def getADCForBinary(square_size, x):
+    h = 1.0
+    f = 10.0
+
+    if abs(x) <= square_size / 2.0:
+        return f * h
+    else:
+        return 0.0
+    
+def getADCForSquare(square_size, x):
+    h = 1.0
+    f = 10.0
+    d = None
+    if x < -square_size / 2.0:
+        d = 0
+    elif -square_size / 2.0 <= x and x <= square_size / 2.0:
+        d = h
+    elif square_size / 2.0 < x:
+        d = 0
+    return f * d
+
+    
+def fullGeo(square_size):
+    info = {}
+    info["square_size"] = square_size
+    info["nchannel"] = 32
+    info["xmidloc"] = np.arange(-(info["nchannel"]) * info["square_size"] / 2.0, 
+                               (info["nchannel"]) * info["square_size"] / 2.0 + info["square_size"], 
+                               info["square_size"]).tolist()
+    info["xmidloc2"] = np.arange(-(info["nchannel"]) * info["square_size"] / 2.0 - info["square_size"] / 2.0, 
+                                 (info["nchannel"]) * info["square_size"] / 2.0 + info["square_size"] / 2.0, 
+                                 info["square_size"]).tolist()
+    return info
+
+def main():
+    nEvents = 10000
+    nBins = 1000
+    low = -10.0
+    high = 10
+    square_size = 40/32
+    outfile = "hodoScopeData.root"
+
+    root_file = ROOT.TFile(outfile, "RECREATE")
+    tree = ROOT.TTree("tree", "tree")
+    amp1_ = makeBranch(tree, "amp1", "vector")
+    amp2_ = makeBranch(tree, "amp2", "vector")
+    xtruth_ = makeBranch(tree, "xtruth", "D")
+
+
+    histos = {}
+    histos["xtruth"] = ROOT.TH1D("xtruth", "xtruth; x_{truth} [mm]; events", nBins, -15, 15)
+    histos["xtruth"].SetMinimum(0)
+    histos["xreco"] = ROOT.TH1D("xreco", "xreco; x_{reco} [mm]; events", nBins, -15, 15)
+    histos["xreco"].SetMinimum(0)
+    histos["xdiff"] = ROOT.TH1D("xdiff", "xdiff; xdiff [mm]; events", 100, -20, 20)
+    histos["binary_adc_x"] = ROOT.TH2D("binary_adc_x", "binary_adc_x; x_{truth} [mm]; adc; events", nBins, -square_size, square_size, 100, 0, 15)
+    histos["tri_adc_x"] = ROOT.TH2D("tri_adc_x", "tri_adc_x; x_{truth} [mm]; adc; events", nBins, -square_size, square_size, 100, 0, 15)
+    histos["binary_adcMax_x"] = ROOT.TH2D("binary_adcMax_x", "binary_adcMax_x; x_{truth} [mm]; adc; events", nBins, -15, 15, 100, 0, 15)
+    histos["tri1_adcMax_x"] = ROOT.TH2D("tri1_adcMax_x", "tri1_adcMax_x; x_{truth} [mm]; adc; events", nBins, -15, 15, 100, 0, 15)
+    histos["tri2_adcMax_x"] = ROOT.TH2D("tri2_adcMax_x", "tri2_adcMax_x; x_{truth} [mm]; adc; events", nBins, -15, 15, 100, 0, 15)
+
+    geo = fullGeo(square_size)
+    print(geo)
+
+    for i in range(nEvents):
+        xtruth = rand(low,high)
+
+        maxChannelX1, maxChannelIdx1 = find_nearest(geo["xmidloc"], xtruth)
+        ampBinary = [-10.0]*len(geo["xmidloc"])
+        ampTri1 = [-10.0]*len(geo["xmidloc"])
+        for i in range(len(geo["xmidloc"])):
+            if i == maxChannelIdx1:
+                localX1 = xtruth - geo["xmidloc"][i]
+                ampBinary[i] = getADCForBinary(square_size, localX1)
+                ampTri1[i] = getADCForSquare(square_size, localX1)
+            else:
+                ampBinary[i] = 0.0
+                ampTri1[i] = 0.0
+        ampMaxBinary = max(ampBinary)
+        ampMaxTri1 = max(ampTri1)
+
+        maxChannelX2, maxChannelIdx2 = find_nearest(geo["xmidloc2"], xtruth)
+        ampTri2 = [-10.0]*len(geo["xmidloc2"])
+        for i in range(len(geo["xmidloc2"])):
+            if i == maxChannelIdx2:
+                localX2 = xtruth - geo["xmidloc2"][i]
+                ampTri2[i] = getADCForSquare(square_size, localX2)
+            else:
+                ampTri2[i] = 0.0
+
+        ampMaxTri2 = max(ampTri2)
+
+        xreco = maxChannelX1
+        xrecoTriangle = maxChannelX1
+
+
+        histos["xtruth"].Fill(xtruth)
+        histos["xreco"].Fill(xreco)
+        histos["xdiff"].Fill(xtruth - xreco)
+        histos["binary_adc_x"].Fill(xtruth, getADCForBinary(square_size, xtruth - geo["xmidloc"][maxChannelIdx1]))
+        histos["tri_adc_x"].Fill(xtruth, getADCForSquare(square_size, xtruth))
+        histos["binary_adcMax_x"].Fill(xtruth, ampMaxBinary)
+        histos["tri1_adcMax_x"].Fill(xtruth, ampMaxTri1)
+        histos["tri2_adcMax_x"].Fill(xtruth, ampMaxTri2)
+
+        xtruth_[0] = xtruth
+        for x in ampTri1:
+            amp1_.push_back(x)
+        for x in ampTri2:
+            amp2_.push_back(x)
+
+        tree.Fill()
+        amp1_.clear()
+        amp2_.clear()
+
+
+    c1 = ROOT.TCanvas("c", "c", 800, 700)
+    saveHisto(c1, histos, "xtruth", "hist")
+    saveHisto(c1, histos, "xreco", "hist")
+    saveHisto(c1, histos, "xdiff", "hist")
+    saveHisto(c1, histos, "binary_adc_x", "colz")
+    saveHisto(c1, histos, "tri_adc_x", "colz")
+    saveHisto(c1, histos, "binary_adcMax_x", "colz")
+    saveHisto(c1, histos, "tri1_adcMax_x", "colz")
+    saveHisto(c1, histos, "tri2_adcMax_x", "colz")
+
+    root_file.Write()
+    tree.Write()
+    root_file.Close()
+
+if __name__ == '__main__':
+    main()
+
+
+
+
