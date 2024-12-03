@@ -1,0 +1,64 @@
+import random
+import ROOT
+import math
+import numpy as np
+ROOT.gROOT.SetBatch(True)
+
+def fullGeo(pitch):
+    info = {}
+    info["pitch"] = pitch
+    info["nchannel"] = 32
+    info["xmidloc"] = np.arange(-(info["nchannel"])*info["pitch"]/2.0, (info["nchannel"])*info["pitch"]/2.0 + info["pitch"], info["pitch"]).tolist()
+    info["xmidloc2"] = np.arange(-(info["nchannel"])*info["pitch"]/2.0-info["pitch"]/2.0, (info["nchannel"])*info["pitch"]/2.0 + info["pitch"]/2.0, info["pitch"]).tolist()    
+    return info
+
+def saveHisto(c, hDic, name, drawOpt=""):
+    hDic[name].Draw(drawOpt)
+    c.SaveAs(name+".png")    
+
+    
+def get_top_amp_and_x(amp1, amp2, geo):
+    
+    all_amps = amp1 + amp2
+    all_x = geo["xmidloc"] + geo["xmidloc2"]   
+    top_two_indices = sorted(range(len(all_amps)), key=lambda i: all_amps[i], reverse=True)[:2]
+    top_two_x = [all_x[i] for i in top_two_indices]
+    return top_two_x
+
+def fill_histogram_with_avg_x_vs_xtruth(histos, avg_x, xtruth):
+     x_diff = avg_x - xtruth
+     histos["avg_x_vs_xtruth"].Fill(x_diff)
+
+def main():
+    input_file = ROOT.TFile("hodoScopeData.root", "READ")
+    tree = input_file.Get("tree")
+    pitch = 40 / 32
+    geo = fullGeo(pitch)
+    output_file = ROOT.TFile("output_with_avg_x.root", "RECREATE")
+    histos = {}
+    histos["avg_x_vs_xtruth"] = ROOT.TH1D("avg_x_vs_xtruth", "avg_x_vs_xtruth; avg_x - xtruth [mm]; events", 100, -20, 20)
+
+    for event in tree:
+        amp1 = np.array(event.amp1)
+        amp2 = np.array(event.amp2)
+        xtruth = event.xtruth
+        top_two_x = get_top_amp_and_x(amp1, amp2, geo)
+        avg_x = np.mean(top_two_x)
+        fill_histogram_with_avg_x_vs_xtruth(histos, avg_x, xtruth)
+
+
+    c1 = ROOT.TCanvas( "c", "c", 800, 700)
+    saveHisto(c1, histos, "avg_x_vs_xtruth")
+    output_file.Write()
+    output_file.Close()
+    input_file.Close()
+
+
+
+
+    print("Done")
+
+if __name__ == '__main__':
+    main()
+
+
