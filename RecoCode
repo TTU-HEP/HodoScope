@@ -35,9 +35,6 @@ def main():
     pitch = 40 / 32
     geo = fullGeo(pitch)
     output_file = ROOT.TFile("output_with_avg_x.root", "RECREATE")
-    tree_out = ROOT.TTree("tree", "tree_with_avg_x")
-    avg_x_ = np.zeros(1, dtype=float)
-    tree_out.Branch("avg_x", avg_x_, "avg_x/D")
     histos = {}
     histos["avg_x_vs_xtruth"] = ROOT.TH1D("avg_x_vs_xtruth", "avg_x_vs_xtruth; avg_x - xtruth [mm]; events", 100, -20, 20)
 
@@ -48,8 +45,6 @@ def main():
         top_two_x = get_top_amp_and_x(amp1, amp2, geo)
         avg_x = np.mean(top_two_x)
         fill_histogram_with_avg_x_vs_xtruth(histos, avg_x, xtruth)
-        avg_x_[0] = avg_x
-        tree_out.Fill()
 
 
     c1 = ROOT.TCanvas( "c", "c", 800, 700)
