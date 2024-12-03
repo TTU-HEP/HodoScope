@@ -12,14 +12,9 @@ def makeBranch(tree, name, t):
     elif t == "D":
         b = np.zeros(1, dtype=float)
         tree.Branch(name, b, name+"/"+t)
-    else:
-        print("branch type error")
-    return b
+    return b    
 
-def saveHisto(c, hDic, name, drawOpt):
-    hDic[name].Draw(drawOpt)
-    c.SaveAs(name+".png")
-
+ 
 def rand(m=0,M=100):
     a = random.uniform(m,M)
     return a
@@ -83,18 +78,6 @@ def main():
     xtruth_ = makeBranch(tree, "xtruth", "D")
 
 
-    histos = {}
-    histos["xtruth"] = ROOT.TH1D("xtruth", "xtruth; x_{truth} [mm]; events", nBins, -15, 15)
-    histos["xtruth"].SetMinimum(0)
-    histos["xreco"] = ROOT.TH1D("xreco", "xreco; x_{reco} [mm]; events", nBins, -15, 15)
-    histos["xreco"].SetMinimum(0)
-    histos["xdiff"] = ROOT.TH1D("xdiff", "xdiff; xdiff [mm]; events", 100, -20, 20)
-    histos["binary_adc_x"] = ROOT.TH2D("binary_adc_x", "binary_adc_x; x_{truth} [mm]; adc; events", nBins, -square_size, square_size, 100, 0, 15)
-    histos["tri_adc_x"] = ROOT.TH2D("tri_adc_x", "tri_adc_x; x_{truth} [mm]; adc; events", nBins, -square_size, square_size, 100, 0, 15)
-    histos["binary_adcMax_x"] = ROOT.TH2D("binary_adcMax_x", "binary_adcMax_x; x_{truth} [mm]; adc; events", nBins, -15, 15, 100, 0, 15)
-    histos["tri1_adcMax_x"] = ROOT.TH2D("tri1_adcMax_x", "tri1_adcMax_x; x_{truth} [mm]; adc; events", nBins, -15, 15, 100, 0, 15)
-    histos["tri2_adcMax_x"] = ROOT.TH2D("tri2_adcMax_x", "tri2_adcMax_x; x_{truth} [mm]; adc; events", nBins, -15, 15, 100, 0, 15)
-
     geo = fullGeo(square_size)
     print(geo)
 
@@ -130,14 +113,6 @@ def main():
         xrecoTriangle = maxChannelX1
 
 
-        histos["xtruth"].Fill(xtruth)
-        histos["xreco"].Fill(xreco)
-        histos["xdiff"].Fill(xtruth - xreco)
-        histos["binary_adc_x"].Fill(xtruth, getADCForBinary(square_size, xtruth - geo["xmidloc"][maxChannelIdx1]))
-        histos["tri_adc_x"].Fill(xtruth, getADCForSquare(square_size, xtruth))
-        histos["binary_adcMax_x"].Fill(xtruth, ampMaxBinary)
-        histos["tri1_adcMax_x"].Fill(xtruth, ampMaxTri1)
-        histos["tri2_adcMax_x"].Fill(xtruth, ampMaxTri2)
 
         xtruth_[0] = xtruth
         for x in ampTri1:
@@ -150,15 +125,6 @@ def main():
         amp2_.clear()
 
 
-    c1 = ROOT.TCanvas("c", "c", 800, 700)
-    saveHisto(c1, histos, "xtruth", "hist")
-    saveHisto(c1, histos, "xreco", "hist")
-    saveHisto(c1, histos, "xdiff", "hist")
-    saveHisto(c1, histos, "binary_adc_x", "colz")
-    saveHisto(c1, histos, "tri_adc_x", "colz")
-    saveHisto(c1, histos, "binary_adcMax_x", "colz")
-    saveHisto(c1, histos, "tri1_adcMax_x", "colz")
-    saveHisto(c1, histos, "tri2_adcMax_x", "colz")
 
     root_file.Write()
     tree.Write()
@@ -166,6 +132,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
 
